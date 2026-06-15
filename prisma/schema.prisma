@@ -1,0 +1,130 @@
+// This is your Prisma schema file
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model ClientProfile {
+  id                String   @id @default(cuid())
+  companyName       String
+  website           String?
+  servicesOffered   String[]
+  valueProposition  String?
+  targetIndustries  String[]
+  geography         String[]
+  competitiveAdvantages String[]
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  icps              ICP[]
+}
+
+model ICP {
+  id              String   @id @default(cuid())
+  clientProfileId String
+  clientProfile   ClientProfile @relation(fields: [clientProfileId], references: [id])
+  name            String
+  industries      String[]
+  geography       String[]
+  minEmployees    Int?
+  maxEmployees    Int?
+  minYearsInBusiness Int?
+  keywords        String[]
+  exclusions      String[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  prospects       Prospect[]
+}
+
+model Prospect {
+  id              String   @id @default(cuid())
+  icpId           String?
+  icp             ICP?     @relation(fields: [icpId], references: [id])
+  companyName     String
+  website         String?
+  industry        String?
+  location        String?
+  employeeCount   Int?
+  yearsInBusiness Int?
+  status          ProspectStatus @default(NEW)
+  companySummary  String?
+  services        String[]
+  marketsServed   String[]
+  locations       String[]
+  leadershipInfo  String?
+  businessSignals BusinessSignal[]
+  fitScore        Int?
+  fitReason       String?
+  confidenceScore Int?
+  opportunityRating OpportunityRating?
+  recommendedConversation String?
+  outreachDrafts  OutreachDraft[]
+  hubspotCompanyId String?
+  hubspotContactId String?
+  source          String?
+  researchedAt    DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+enum ProspectStatus {
+  NEW
+  RESEARCHING
+  RESEARCHED
+  SCORED
+  OUTREACH_READY
+  IN_CRM
+  ARCHIVED
+}
+
+enum OpportunityRating {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+model BusinessSignal {
+  id          String   @id @default(cuid())
+  prospectId  String
+  prospect    Prospect @relation(fields: [prospectId], references: [id])
+  type        SignalType
+  title       String
+  description String?
+  source      String?
+  detectedAt  DateTime @default(now())
+}
+
+enum SignalType {
+  HIRING
+  EXPANSION
+  NEW_OFFICE
+  AWARD
+  LEADERSHIP_CHANGE
+  PRESS_RELEASE
+  NEW_PROJECT
+  PARTNERSHIP
+  FUNDING
+  OTHER
+}
+
+model OutreachDraft {
+  id          String   @id @default(cuid())
+  prospectId  String
+  prospect    Prospect @relation(fields: [prospectId], references: [id])
+  type        OutreachType
+  subject     String?
+  body        String
+  approved    Boolean  @default(false)
+  sentAt      DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum OutreachType {
+  EMAIL
+  LINKEDIN
+  CALL_SCRIPT
+  MEETING_BRIEF
+}
