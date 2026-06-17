@@ -11,8 +11,9 @@ export async function GET() {
     }),
   ]);
 
-  const scored = all.filter((p) => p.fitScore !== null);
-  const avgFitScore = scored.length > 0 ? Math.round(scored.reduce((a, p) => a + (p.fitScore ?? 0), 0) / scored.length) : 0;
+  type ProspectRow = (typeof all)[number];
+  const scored = all.filter((p: ProspectRow) => p.fitScore !== null);
+  const avgFitScore = scored.length > 0 ? Math.round(scored.reduce((a: number, p: ProspectRow) => a + (p.fitScore ?? 0), 0) / scored.length) : 0;
 
   return NextResponse.json({
     totalProspects: all.length,
