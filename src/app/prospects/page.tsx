@@ -32,16 +32,16 @@ function parseAgentDraft(body: string): AgentDraftPayload | null {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  NEW: "bg-gray-700 text-gray-300",
-  RESEARCHING: "bg-yellow-900 text-yellow-300",
-  RESEARCHED: "bg-blue-900 text-blue-300",
-  SCORED: "bg-purple-900 text-purple-300",
-  OUTREACH_READY: "bg-green-900 text-green-300",
-  IN_CRM: "bg-teal-900 text-teal-300",
-  ARCHIVED: "bg-red-900 text-red-300",
+  NEW: "bg-gray-100 text-gray-600",
+  RESEARCHING: "bg-yellow-50 text-yellow-700",
+  RESEARCHED: "bg-blue-50 text-blue-700",
+  SCORED: "bg-purple-50 text-purple-700",
+  OUTREACH_READY: "bg-green-50 text-green-700",
+  IN_CRM: "bg-teal-50 text-teal-700",
+  ARCHIVED: "bg-red-50 text-red-700",
 };
 
-const OPP_COLORS: Record<string, string> = { HIGH: "text-green-400", MEDIUM: "text-yellow-400", LOW: "text-gray-400" };
+const OPP_COLORS: Record<string, string> = { HIGH: "text-green-600", MEDIUM: "text-yellow-600", LOW: "text-gray-500" };
 
 export default function ProspectsPage() {
   const [prospects, setProspects] = useState<Prospect[]>([]);
@@ -160,7 +160,7 @@ export default function ProspectsPage() {
   const agentDraft = selected?.outreachDrafts?.find((d) => d.type === "AGENT");
   const agentPayload = agentDraft ? parseAgentDraft(agentDraft.body) : null;
 
-  if (loading) return <div className="flex items-center gap-2 text-gray-400"><Spinner /><span>Loading…</span></div>;
+  if (loading) return <div className="flex items-center gap-2 text-gray-500"><Spinner /><span>Loading…</span></div>;
 
   return (
     <div className="flex gap-6 h-full">
@@ -168,10 +168,10 @@ export default function ProspectsPage() {
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-white">Prospects <span className="text-sm font-normal text-gray-400 ml-2">{prospects.length} total</span></h1>
-            <p className="text-gray-400 text-sm mt-1">Research and engage your ideal prospects.</p>
+            <h1 className="text-2xl font-bold text-gray-900">Prospects <span className="text-sm font-normal text-gray-500 ml-2">{prospects.length} total</span></h1>
+            <p className="text-gray-500 text-sm mt-1">Research and engage your ideal prospects.</p>
           </div>
-          <button onClick={() => setShowAddModal(true)} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+          <button onClick={() => setShowAddModal(true)} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
             <Plus size={16} /> Add Prospect
           </button>
         </div>
@@ -181,10 +181,10 @@ export default function ProspectsPage() {
           <div className="relative flex-1 max-w-xs">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search prospects…"
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-9 pr-3 py-2 text-white text-sm outline-none focus:border-blue-500" />
+              className="w-full bg-white border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-gray-900 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500" />
           </div>
           <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
-            className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-blue-500">
+            className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-gray-700 text-sm outline-none focus:border-indigo-500">
             {["ALL", "NEW", "RESEARCHING", "RESEARCHED", "SCORED", "OUTREACH_READY", "IN_CRM", "ARCHIVED"].map((s) => (
               <option key={s} value={s}>{s}</option>
             ))}
@@ -192,15 +192,15 @@ export default function ProspectsPage() {
         </div>
 
         {filtered.length === 0 ? (
-          <div className="text-center py-16 text-gray-500">
+          <div className="text-center py-16 text-gray-400">
             <p className="text-lg">No prospects found.</p>
             <p className="text-sm mt-1">Add your first prospect to get started.</p>
           </div>
         ) : (
-          <div className="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden">
+          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-700 text-gray-400 text-xs uppercase tracking-wide">
+                <tr className="border-b border-gray-100 text-gray-500 text-xs uppercase tracking-wide bg-gray-50">
                   <th className="text-left px-4 py-3">Company</th>
                   <th className="text-left px-4 py-3 hidden md:table-cell">Industry</th>
                   <th className="text-left px-4 py-3">Status</th>
@@ -208,26 +208,26 @@ export default function ProspectsPage() {
                   <th className="text-right px-4 py-3">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-700/50">
+              <tbody className="divide-y divide-gray-100">
                 {filtered.map((p) => (
-                  <tr key={p.id} className="hover:bg-gray-700/30 transition-colors cursor-pointer" onClick={() => { setSelected(p); setActiveTab("EMAIL"); }}>
+                  <tr key={p.id} className="hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => { setSelected(p); setActiveTab("EMAIL"); }}>
                     <td className="px-4 py-3">
-                      <div className="font-medium text-white">{p.companyName}</div>
-                      {p.website && <div className="text-xs text-gray-500 truncate max-w-[200px]">{p.website}</div>}
+                      <div className="font-medium text-gray-900">{p.companyName}</div>
+                      {p.website && <div className="text-xs text-gray-400 truncate max-w-[200px]">{p.website}</div>}
                     </td>
-                    <td className="px-4 py-3 hidden md:table-cell text-gray-400">{p.industry || "—"}</td>
+                    <td className="px-4 py-3 hidden md:table-cell text-gray-500">{p.industry || "—"}</td>
                     <td className="px-4 py-3">
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_COLORS[p.status] || "bg-gray-700 text-gray-300"}`}>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_COLORS[p.status] || "bg-gray-100 text-gray-600"}`}>
                         {p.status.replace("_", " ")}
                       </span>
                     </td>
                     <td className="px-4 py-3 hidden lg:table-cell">
                       {p.fitScore !== null ? (
                         <div className="flex items-center gap-2">
-                          <div className="w-16 h-1.5 bg-gray-700 rounded-full overflow-hidden">
-                            <div className="h-full bg-blue-500 rounded-full" style={{ width: `${p.fitScore}%` }} />
+                          <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${p.fitScore}%` }} />
                           </div>
-                          <span className="text-white text-xs">{p.fitScore}</span>
+                          <span className="text-gray-700 text-xs">{p.fitScore}</span>
                         </div>
                       ) : "—"}
                     </td>
@@ -235,15 +235,15 @@ export default function ProspectsPage() {
                       <div className="flex items-center justify-end gap-2">
                         {(p.status === "NEW" || p.status === "RESEARCHED") && (
                           <button onClick={() => research(p.id)} disabled={researchingId === p.id}
-                            className="text-xs bg-blue-700 hover:bg-blue-600 disabled:opacity-50 text-white px-2 py-1 rounded transition-colors flex items-center gap-1">
+                            className="text-xs bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white px-2 py-1 rounded transition-colors flex items-center gap-1">
                             {researchingId === p.id ? <><Spinner size={12} />Researching…</> : "Research"}
                           </button>
                         )}
                         <button onClick={() => { setSelected(p); setActiveTab("EMAIL"); }}
-                          className="text-xs text-gray-400 hover:text-white border border-gray-600 hover:border-gray-500 px-2 py-1 rounded transition-colors">
+                          className="text-xs text-gray-500 hover:text-gray-900 border border-gray-200 hover:border-gray-300 px-2 py-1 rounded transition-colors">
                           View
                         </button>
-                        <button onClick={() => del(p.id)} className="text-gray-600 hover:text-red-400 transition-colors p-1">
+                        <button onClick={() => del(p.id)} className="text-gray-300 hover:text-red-500 transition-colors p-1">
                           <X size={12} />
                         </button>
                       </div>
@@ -258,17 +258,17 @@ export default function ProspectsPage() {
 
       {/* Detail Panel */}
       {selected && (
-        <div className="w-[600px] shrink-0 bg-gray-800 border border-gray-700 rounded-xl overflow-y-auto max-h-[calc(100vh-8rem)]">
-          <div className="flex items-start justify-between p-5 border-b border-gray-700 sticky top-0 bg-gray-800 z-10">
+        <div className="w-[600px] shrink-0 bg-white border border-gray-200 rounded-xl overflow-y-auto max-h-[calc(100vh-8rem)] shadow-sm">
+          <div className="flex items-start justify-between p-5 border-b border-gray-100 sticky top-0 bg-white z-10">
             <div>
-              <h2 className="font-semibold text-white text-lg">{selected.companyName}</h2>
+              <h2 className="font-semibold text-gray-900 text-lg">{selected.companyName}</h2>
               {selected.website && (
-                <a href={selected.website} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-400 hover:underline flex items-center gap-1 mt-0.5">
+                <a href={selected.website} target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-600 hover:underline flex items-center gap-1 mt-0.5">
                   {selected.website} <ExternalLink size={10} />
                 </a>
               )}
             </div>
-            <button onClick={() => setSelected(null)} className="text-gray-400 hover:text-white ml-4 mt-0.5"><X size={18} /></button>
+            <button onClick={() => setSelected(null)} className="text-gray-400 hover:text-gray-700 ml-4 mt-0.5"><X size={18} /></button>
           </div>
 
           <div className="p-5 space-y-5">
@@ -276,22 +276,22 @@ export default function ProspectsPage() {
             <div className="flex flex-wrap gap-2">
               <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_COLORS[selected.status]}`}>{selected.status.replace("_", " ")}</span>
               {selected.opportunityRating && <span className={`text-xs font-medium ${OPP_COLORS[selected.opportunityRating]}`}>{selected.opportunityRating} opportunity</span>}
-              {selected.fitScore !== null && <span className="text-xs text-gray-400">Fit Score: <span className="text-white font-medium">{selected.fitScore}/100</span></span>}
+              {selected.fitScore !== null && <span className="text-xs text-gray-500">Fit Score: <span className="text-gray-900 font-medium">{selected.fitScore}/100</span></span>}
             </div>
 
             {/* Summary */}
             {selected.companySummary && (
               <div>
                 <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Company Summary</h3>
-                <p className="text-gray-300 text-sm">{selected.companySummary}</p>
+                <p className="text-gray-700 text-sm">{selected.companySummary}</p>
               </div>
             )}
 
             {/* Fit Reason */}
             {selected.fitReason && (
-              <div className="bg-blue-900/30 border border-blue-800 rounded-lg p-3">
-                <h3 className="text-xs font-semibold text-blue-400 uppercase tracking-wide mb-1">Fit Reason</h3>
-                <p className="text-blue-200 text-sm">{selected.fitReason}</p>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <h3 className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-1">Fit Reason</h3>
+                <p className="text-blue-800 text-sm">{selected.fitReason}</p>
               </div>
             )}
 
@@ -299,7 +299,7 @@ export default function ProspectsPage() {
             {selected.recommendedConversation && (
               <div>
                 <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Recommended Conversation</h3>
-                <p className="text-gray-300 text-sm italic">{selected.recommendedConversation}</p>
+                <p className="text-gray-600 text-sm italic">{selected.recommendedConversation}</p>
               </div>
             )}
 
@@ -309,12 +309,12 @@ export default function ProspectsPage() {
                 <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Business Signals</h3>
                 <div className="space-y-2">
                   {selected.businessSignals.map((s) => (
-                    <div key={s.id} className="bg-gray-700/50 rounded-lg p-3">
+                    <div key={s.id} className="bg-gray-50 border border-gray-100 rounded-lg p-3">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs bg-gray-600 text-gray-300 px-1.5 py-0.5 rounded">{s.type}</span>
-                        <span className="text-sm font-medium text-white">{s.title}</span>
+                        <span className="text-xs bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded">{s.type}</span>
+                        <span className="text-sm font-medium text-gray-900">{s.title}</span>
                       </div>
-                      {s.description && <p className="text-xs text-gray-400">{s.description}</p>}
+                      {s.description && <p className="text-xs text-gray-500">{s.description}</p>}
                     </div>
                   ))}
                 </div>
@@ -325,23 +325,23 @@ export default function ProspectsPage() {
             <div className="flex flex-wrap gap-2">
               {(selected.status === "NEW" || selected.status === "RESEARCHED" || selected.status === "SCORED") && (
                 <button onClick={() => research(selected.id)} disabled={researchingId === selected.id}
-                  className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white px-3 py-1.5 rounded-lg text-sm transition-colors">
+                  className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white px-3 py-1.5 rounded-lg text-sm transition-colors">
                   {researchingId === selected.id ? <><Spinner size={14} />Researching…</> : "Run Research"}
                 </button>
               )}
               {(selected.status === "SCORED" || selected.status === "RESEARCHED") && (
                 <button onClick={() => generateOutreach(selected.id)} disabled={outreachingId === selected.id}
-                  className="flex items-center gap-1.5 bg-green-700 hover:bg-green-600 disabled:opacity-60 text-white px-3 py-1.5 rounded-lg text-sm transition-colors">
+                  className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white px-3 py-1.5 rounded-lg text-sm transition-colors">
                   {outreachingId === selected.id ? <><Spinner size={14} />Generating…</> : "Generate Outreach"}
                 </button>
               )}
               <button onClick={() => runAgent(selected.id)} disabled={agentingId === selected.id}
-                className="flex items-center gap-1.5 bg-violet-700 hover:bg-violet-600 disabled:opacity-60 text-white px-3 py-1.5 rounded-lg text-sm transition-colors">
+                className="flex items-center gap-1.5 bg-violet-600 hover:bg-violet-700 disabled:opacity-60 text-white px-3 py-1.5 rounded-lg text-sm transition-colors">
                 {agentingId === selected.id ? <><Spinner size={14} />Agent thinking…</> : "Run Agent"}
               </button>
               {selected.status !== "IN_CRM" && selected.fitScore !== null && (
                 <button onClick={() => syncHubspot(selected.id)} disabled={hubspotingId === selected.id}
-                  className="flex items-center gap-1.5 bg-orange-700 hover:bg-orange-600 disabled:opacity-60 text-white px-3 py-1.5 rounded-lg text-sm transition-colors">
+                  className="flex items-center gap-1.5 bg-orange-600 hover:bg-orange-700 disabled:opacity-60 text-white px-3 py-1.5 rounded-lg text-sm transition-colors">
                   {hubspotingId === selected.id ? <><Spinner size={14} />Syncing…</> : "Sync to HubSpot"}
                 </button>
               )}
@@ -356,14 +356,14 @@ export default function ProspectsPage() {
                     const hasDraft = selected.outreachDrafts.some((d) => d.type === tab);
                     return (
                       <button key={tab} onClick={() => setActiveTab(tab)} disabled={!hasDraft}
-                        className={`text-xs px-3 py-1.5 rounded-lg transition-colors disabled:opacity-40 ${activeTab === tab ? "bg-blue-600 text-white" : "bg-gray-700 text-gray-400 hover:text-white"}`}>
+                        className={`text-xs px-3 py-1.5 rounded-lg transition-colors disabled:opacity-40 ${activeTab === tab ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-500 hover:text-gray-900 hover:bg-gray-200"}`}>
                         {tab.replace("_", " ")}
                       </button>
                     );
                   })}
                   {agentDraft && (
                     <button onClick={() => setActiveTab("AGENT")}
-                      className={`text-xs px-3 py-1.5 rounded-lg transition-colors ${activeTab === "AGENT" ? "bg-violet-600 text-white" : "bg-violet-900/50 text-violet-300 hover:text-white"}`}>
+                      className={`text-xs px-3 py-1.5 rounded-lg transition-colors ${activeTab === "AGENT" ? "bg-violet-600 text-white" : "bg-violet-50 text-violet-600 hover:bg-violet-100"}`}>
                       Agent
                     </button>
                   )}
@@ -372,26 +372,26 @@ export default function ProspectsPage() {
                 {/* Agent tab content */}
                 {activeTab === "AGENT" && agentDraft && agentPayload && (
                   <div className="space-y-3">
-                    <div className="bg-violet-900/20 border border-violet-800 rounded-lg p-3">
-                      <h4 className="text-xs font-semibold text-violet-400 uppercase tracking-wide mb-1">Agent Reasoning</h4>
-                      <p className="text-violet-200 text-sm">{agentPayload.reasoning}</p>
+                    <div className="bg-violet-50 border border-violet-200 rounded-lg p-3">
+                      <h4 className="text-xs font-semibold text-violet-600 uppercase tracking-wide mb-1">Agent Reasoning</h4>
+                      <p className="text-violet-800 text-sm">{agentPayload.reasoning}</p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-400">Outreach type chosen:</span>
-                      <span className="text-xs bg-violet-800 text-violet-200 px-2 py-0.5 rounded-full font-medium">
+                      <span className="text-xs text-gray-500">Outreach type chosen:</span>
+                      <span className="text-xs bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full font-medium">
                         {agentPayload.outreachType.replace(/_/g, " ")}
                       </span>
                     </div>
-                    <div className="bg-gray-900 border border-gray-700 rounded-lg p-4">
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                       {agentDraft.subject && (
                         <div className="mb-3">
                           <span className="text-xs text-gray-400 uppercase tracking-wide">Subject: </span>
-                          <span className="text-sm text-white font-medium">{agentDraft.subject}</span>
+                          <span className="text-sm text-gray-900 font-medium">{agentDraft.subject}</span>
                         </div>
                       )}
-                      <pre className="text-sm text-gray-300 whitespace-pre-wrap font-sans">{agentPayload.messageBody}</pre>
+                      <pre className="text-sm text-gray-700 whitespace-pre-wrap font-sans">{agentPayload.messageBody}</pre>
                       <button onClick={() => copy(agentDraft.subject ? `Subject: ${agentDraft.subject}\n\n${agentPayload.messageBody}` : agentPayload.messageBody)}
-                        className="mt-3 flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-colors">
+                        className="mt-3 flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-700 transition-colors">
                         {copied ? <><Check size={12} />Copied!</> : <><Copy size={12} />Copy</>}
                       </button>
                     </div>
@@ -400,16 +400,16 @@ export default function ProspectsPage() {
 
                 {/* Standard draft tab content */}
                 {activeTab !== "AGENT" && activeDraft && (
-                  <div className="bg-gray-900 border border-gray-700 rounded-lg p-4">
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                     {activeDraft.subject && (
                       <div className="mb-3">
                         <span className="text-xs text-gray-400 uppercase tracking-wide">Subject: </span>
-                        <span className="text-sm text-white font-medium">{activeDraft.subject}</span>
+                        <span className="text-sm text-gray-900 font-medium">{activeDraft.subject}</span>
                       </div>
                     )}
-                    <pre className="text-sm text-gray-300 whitespace-pre-wrap font-sans">{activeDraft.body}</pre>
+                    <pre className="text-sm text-gray-700 whitespace-pre-wrap font-sans">{activeDraft.body}</pre>
                     <button onClick={() => copy(activeDraft.subject ? `Subject: ${activeDraft.subject}\n\n${activeDraft.body}` : activeDraft.body)}
-                      className="mt-3 flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-colors">
+                      className="mt-3 flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-700 transition-colors">
                       {copied ? <><Check size={12} />Copied!</> : <><Copy size={12} />Copy</>}
                     </button>
                   </div>
@@ -422,16 +422,16 @@ export default function ProspectsPage() {
 
       {/* Add Prospect Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-800 border border-gray-700 rounded-xl w-full max-w-md">
-            <div className="flex items-center justify-between p-5 border-b border-gray-700">
-              <h2 className="text-lg font-semibold text-white">Add Prospect</h2>
-              <button onClick={() => setShowAddModal(false)} className="text-gray-400 hover:text-white"><X size={20} /></button>
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white border border-gray-200 rounded-xl w-full max-w-md shadow-lg">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100">
+              <h2 className="text-lg font-semibold text-gray-900">Add Prospect</h2>
+              <button onClick={() => setShowAddModal(false)} className="text-gray-400 hover:text-gray-700"><X size={20} /></button>
             </div>
             <div className="p-5 space-y-4">
               {(["companyName", "website", "industry", "location"] as const).map((field) => (
                 <div key={field}>
-                  <label className="block text-sm font-medium text-gray-300 mb-1 capitalize">
+                  <label className="block text-sm font-medium text-gray-700 mb-1 capitalize">
                     {field === "companyName" ? "Company Name *" : field.charAt(0).toUpperCase() + field.slice(1)}
                   </label>
                   <input type="text" value={addForm[field]} onChange={(e) => setAddForm((f) => ({ ...f, [field]: e.target.value }))}
@@ -439,24 +439,24 @@ export default function ProspectsPage() {
                 </div>
               ))}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Employee Count</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Employee Count</label>
                 <input type="number" value={addForm.employeeCount} onChange={(e) => setAddForm((f) => ({ ...f, employeeCount: e.target.value }))}
                   className={inputCls} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">ICP</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">ICP</label>
                 <select value={addForm.icpId} onChange={(e) => setAddForm((f) => ({ ...f, icpId: e.target.value }))} className={inputCls}>
                   <option value="">None</option>
                   {icps.map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}
                 </select>
               </div>
             </div>
-            <div className="flex gap-3 p-5 border-t border-gray-700">
+            <div className="flex gap-3 p-5 border-t border-gray-100">
               <button onClick={addProspect} disabled={adding || !addForm.companyName}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2">
+                className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2">
                 {adding && <Spinner size={14} />}{adding ? "Adding…" : "Add Prospect"}
               </button>
-              <button onClick={() => setShowAddModal(false)} className="px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-white border border-gray-600 hover:border-gray-500">
+              <button onClick={() => setShowAddModal(false)} className="px-4 py-2 rounded-lg text-sm text-gray-500 hover:text-gray-900 border border-gray-200 hover:border-gray-300">
                 Cancel
               </button>
             </div>
@@ -467,4 +467,4 @@ export default function ProspectsPage() {
   );
 }
 
-const inputCls = "w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-blue-500";
+const inputCls = "w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-gray-900 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500";

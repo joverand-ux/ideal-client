@@ -15,13 +15,13 @@ interface Stats {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  NEW: "bg-gray-700 text-gray-300",
-  RESEARCHING: "bg-yellow-900 text-yellow-300",
-  RESEARCHED: "bg-blue-900 text-blue-300",
-  SCORED: "bg-purple-900 text-purple-300",
-  OUTREACH_READY: "bg-green-900 text-green-300",
-  IN_CRM: "bg-teal-900 text-teal-300",
-  ARCHIVED: "bg-red-900 text-red-300",
+  NEW: "bg-gray-100 text-gray-600",
+  RESEARCHING: "bg-yellow-50 text-yellow-700",
+  RESEARCHED: "bg-blue-50 text-blue-700",
+  SCORED: "bg-purple-50 text-purple-700",
+  OUTREACH_READY: "bg-green-50 text-green-700",
+  IN_CRM: "bg-teal-50 text-teal-700",
+  ARCHIVED: "bg-red-50 text-red-700",
 };
 
 export default function DashboardPage() {
@@ -35,19 +35,19 @@ export default function DashboardPage() {
       .catch(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="flex items-center gap-2 text-gray-400"><Spinner /><span>Loading…</span></div>;
+  if (loading) return <div className="flex items-center gap-2 text-gray-500"><Spinner /><span>Loading…</span></div>;
 
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-        <p className="text-gray-400 text-sm mt-1">Turn Business Signals Into Qualified Conversations.</p>
+        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+        <p className="text-gray-500 text-sm mt-1">Turn Business Signals Into Qualified Conversations.</p>
       </div>
 
       {!stats || stats.totalProspects === 0 ? (
-        <div className="text-center py-20 text-gray-500">
-          <p className="text-xl font-medium text-gray-400">Welcome to ConnectIQ</p>
-          <p className="text-sm mt-2">Get started by setting up your <Link href="/profile" className="text-blue-400 hover:underline">Client Profile</Link> and adding <Link href="/prospects" className="text-blue-400 hover:underline">Prospects</Link>.</p>
+        <div className="text-center py-20 text-gray-400">
+          <p className="text-xl font-medium text-gray-600">Welcome to ConnectIQ</p>
+          <p className="text-sm mt-2">Get started by setting up your <Link href="/profile" className="text-indigo-600 hover:underline">Client Profile</Link> and adding <Link href="/prospects" className="text-indigo-600 hover:underline">Prospects</Link>.</p>
         </div>
       ) : (
         <>
@@ -59,71 +59,71 @@ export default function DashboardPage() {
               { label: "Outreach Ready", value: stats.outreachReady },
               { label: "In CRM", value: stats.inCrm },
             ].map((s) => (
-              <div key={s.label} className="bg-gray-800 border border-gray-700 rounded-xl p-5">
-                <div className="text-3xl font-bold text-white">{s.value}</div>
-                <div className="text-sm text-gray-400 mt-1">{s.label}</div>
+              <div key={s.label} className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+                <div className="text-3xl font-bold text-gray-900">{s.value}</div>
+                <div className="text-sm text-gray-500 mt-1">{s.label}</div>
               </div>
             ))}
           </div>
 
           <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="bg-gray-800 border border-gray-700 rounded-xl p-5 flex items-center gap-4">
+            <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm flex items-center gap-4">
               <div>
-                <div className="text-4xl font-bold text-blue-400">{stats.avgFitScore}</div>
-                <div className="text-sm text-gray-400 mt-1">Avg Fit Score</div>
+                <div className="text-4xl font-bold text-indigo-600">{stats.avgFitScore}</div>
+                <div className="text-sm text-gray-500 mt-1">Avg Fit Score</div>
               </div>
               <div className="flex-1">
-                <div className="w-full h-2 bg-gray-700 rounded-full overflow-hidden">
-                  <div className="h-full bg-blue-500 rounded-full" style={{ width: `${stats.avgFitScore}%` }} />
+                <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${stats.avgFitScore}%` }} />
                 </div>
               </div>
             </div>
-            <div className="bg-gray-800 border border-gray-700 rounded-xl p-5">
-              <div className="text-4xl font-bold text-green-400">{stats.highOpportunities}</div>
-              <div className="text-sm text-gray-400 mt-1">High Opportunities</div>
+            <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+              <div className="text-4xl font-bold text-green-600">{stats.highOpportunities}</div>
+              <div className="text-sm text-gray-500 mt-1">High Opportunities</div>
             </div>
           </div>
 
           {/* Recent prospects */}
-          <div className="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-700 flex items-center justify-between">
-              <h2 className="font-semibold text-white">Recent Prospects</h2>
-              <Link href="/prospects" className="text-xs text-blue-400 hover:underline">View all →</Link>
+          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+              <h2 className="font-semibold text-gray-900">Recent Prospects</h2>
+              <Link href="/prospects" className="text-xs text-indigo-600 hover:underline">View all →</Link>
             </div>
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-700/50 text-gray-400 text-xs uppercase tracking-wide">
+                <tr className="border-b border-gray-100 text-gray-500 text-xs uppercase tracking-wide">
                   <th className="text-left px-5 py-3">Company</th>
                   <th className="text-left px-5 py-3">Status</th>
                   <th className="text-left px-5 py-3">Fit Score</th>
                   <th className="text-left px-5 py-3">Opportunity</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-700/30">
+              <tbody className="divide-y divide-gray-50">
                 {stats.recentProspects.map((p) => (
-                  <tr key={p.id} className="hover:bg-gray-700/20">
-                    <td className="px-5 py-3 font-medium text-white">{p.companyName}</td>
+                  <tr key={p.id} className="hover:bg-gray-50">
+                    <td className="px-5 py-3 font-medium text-gray-900">{p.companyName}</td>
                     <td className="px-5 py-3">
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_COLORS[p.status] || "bg-gray-700 text-gray-300"}`}>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_COLORS[p.status] || "bg-gray-100 text-gray-600"}`}>
                         {p.status.replace("_", " ")}
                       </span>
                     </td>
                     <td className="px-5 py-3">
                       {p.fitScore !== null ? (
                         <div className="flex items-center gap-2">
-                          <div className="w-12 h-1.5 bg-gray-700 rounded-full overflow-hidden">
-                            <div className="h-full bg-blue-500 rounded-full" style={{ width: `${p.fitScore}%` }} />
+                          <div className="w-12 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${p.fitScore}%` }} />
                           </div>
-                          <span className="text-white text-xs">{p.fitScore}</span>
+                          <span className="text-gray-700 text-xs">{p.fitScore}</span>
                         </div>
-                      ) : <span className="text-gray-500">—</span>}
+                      ) : <span className="text-gray-400">—</span>}
                     </td>
                     <td className="px-5 py-3">
                       {p.opportunityRating ? (
-                        <span className={`text-xs font-medium ${p.opportunityRating === "HIGH" ? "text-green-400" : p.opportunityRating === "MEDIUM" ? "text-yellow-400" : "text-gray-400"}`}>
+                        <span className={`text-xs font-medium ${p.opportunityRating === "HIGH" ? "text-green-600" : p.opportunityRating === "MEDIUM" ? "text-yellow-600" : "text-gray-500"}`}>
                           {p.opportunityRating}
                         </span>
-                      ) : <span className="text-gray-500">—</span>}
+                      ) : <span className="text-gray-400">—</span>}
                     </td>
                   </tr>
                 ))}

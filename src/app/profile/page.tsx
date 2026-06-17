@@ -57,17 +57,17 @@ export default function ProfilePage() {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-white">Client Profile</h1>
-        <p className="text-gray-400 text-sm mt-1">Tell ConnectIQ about your company so it can find the right prospects.</p>
+        <h1 className="text-2xl font-bold text-gray-900">Client Profile</h1>
+        <p className="text-gray-500 text-sm mt-1">Tell ConnectIQ about your company so it can find the right prospects.</p>
       </div>
 
       {msg && (
-        <div className={`mb-4 px-4 py-3 rounded-lg text-sm ${msg.type === "success" ? "bg-green-900 text-green-200" : "bg-red-900 text-red-200"}`}>
+        <div className={`mb-4 px-4 py-3 rounded-lg text-sm ${msg.type === "success" ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-700 border border-red-200"}`}>
           {msg.text}
         </div>
       )}
 
-      <div className="bg-gray-800 rounded-xl border border-gray-700 p-6 space-y-5">
+      <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-5 shadow-sm">
         <Field label="Company Name">
           <input type="text" value={form.companyName} onChange={(e) => set("companyName", e.target.value)}
             className={inputCls} placeholder="Acme Engineering" />
@@ -94,7 +94,7 @@ export default function ProfilePage() {
         </Field>
         <div className="pt-2">
           <button onClick={save} disabled={saving}
-            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors">
+            className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors">
             {saving ? "Saving…" : "Save Profile"}
           </button>
         </div>
@@ -103,12 +103,12 @@ export default function ProfilePage() {
   );
 }
 
-const inputCls = "w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-blue-500";
+const inputCls = "w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-gray-900 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-300 mb-1">{label}</label>
+      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
       {children}
     </div>
   );

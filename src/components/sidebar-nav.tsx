@@ -20,7 +20,7 @@ export function SidebarNav() {
         return (
           <Link key={href} href={href}
             className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-              active ? "bg-blue-600 text-white" : "text-gray-400 hover:bg-gray-800 hover:text-white"
+              active ? "bg-indigo-600 text-white" : "text-gray-600 hover:bg-indigo-50 hover:text-indigo-700"
             }`}>
             <Icon size={16} />
             {label}
