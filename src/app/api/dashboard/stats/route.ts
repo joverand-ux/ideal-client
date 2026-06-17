@@ -17,12 +17,12 @@ export async function GET() {
 
   return NextResponse.json({
     totalProspects: all.length,
-    researched: all.filter((p) => ["RESEARCHED", "SCORED", "OUTREACH_READY", "IN_CRM"].includes(p.status)).length,
-    scored: all.filter((p) => ["SCORED", "OUTREACH_READY", "IN_CRM"].includes(p.status)).length,
-    outreachReady: all.filter((p) => p.status === "OUTREACH_READY").length,
-    inCrm: all.filter((p) => p.status === "IN_CRM").length,
+    researched: all.filter((p: ProspectRow) => ["RESEARCHED", "SCORED", "OUTREACH_READY", "IN_CRM"].includes(p.status)).length,
+    scored: all.filter((p: ProspectRow) => ["SCORED", "OUTREACH_READY", "IN_CRM"].includes(p.status)).length,
+    outreachReady: all.filter((p: ProspectRow) => p.status === "OUTREACH_READY").length,
+    inCrm: all.filter((p: ProspectRow) => p.status === "IN_CRM").length,
     avgFitScore,
-    highOpportunities: all.filter((p) => p.opportunityRating === "HIGH").length,
+    highOpportunities: all.filter((p: ProspectRow) => p.opportunityRating === "HIGH").length,
     recentProspects: recent,
   });
 }
