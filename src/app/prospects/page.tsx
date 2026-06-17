@@ -17,6 +17,20 @@ interface Prospect {
 }
 interface ICP { id: string; name: string; }
 
+interface AgentDraftPayload {
+  reasoning: string;
+  outreachType: string;
+  messageBody: string;
+}
+
+function parseAgentDraft(body: string): AgentDraftPayload | null {
+  try {
+    return JSON.parse(body) as AgentDraftPayload;
+  } catch {
+    return null;
+  }
+}
+
 const STATUS_COLORS: Record<string, string> = {
   NEW: "bg-gray-700 text-gray-300",
   RESEARCHING: "bg-yellow-900 text-yellow-300",
@@ -39,6 +53,7 @@ export default function ProspectsPage() {
   const [selected, setSelected] = useState<Prospect | null>(null);
   const [researchingId, setResearchingId] = useState<string | null>(null);
   const [outreachingId, setOutreachingId] = useState<string | null>(null);
+  const [agentingId, setAgentingId] = useState<string | null>(null);
   const [hubspotingId, setHubspotingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>("EMAIL");
   const [copied, setCopied] = useState(false);
@@ -78,14 +93,27 @@ export default function ProspectsPage() {
     const r = await fetch(`/api/prospects/${id}/outreach`, { method: "POST" });
     if (r.ok) {
       await load();
-      const updated = prospects.find((p) => p.id === id);
-      if (updated && selected?.id === id) {
+      if (selected?.id === id) {
         const fresh = await fetch(`/api/prospects/${id}`).then((res) => res.json()) as Prospect;
         setSelected(fresh);
       }
     }
     setOutreachingId(null);
     setActiveTab("EMAIL");
+  };
+
+  const runAgent = async (id: string) => {
+    setAgentingId(id);
+    const r = await fetch(`/api/prospects/${id}/agent-outreach`, { method: "POST" });
+    if (r.ok) {
+      await load();
+      if (selected?.id === id) {
+        const fresh = await fetch(`/api/prospects/${id}`).then((res) => res.json()) as Prospect;
+        setSelected(fresh);
+        setActiveTab("AGENT");
+      }
+    }
+    setAgentingId(null);
   };
 
   const syncHubspot = async (id: string) => {
@@ -129,6 +157,8 @@ export default function ProspectsPage() {
   };
 
   const activeDraft = selected?.outreachDrafts?.find((d) => d.type === activeTab);
+  const agentDraft = selected?.outreachDrafts?.find((d) => d.type === "AGENT");
+  const agentPayload = agentDraft ? parseAgentDraft(agentDraft.body) : null;
 
   if (loading) return <div className="flex items-center gap-2 text-gray-400"><Spinner /><span>Loading…</span></div>;
 
@@ -305,6 +335,10 @@ export default function ProspectsPage() {
                   {outreachingId === selected.id ? <><Spinner size={14} />Generating…</> : "Generate Outreach"}
                 </button>
               )}
+              <button onClick={() => runAgent(selected.id)} disabled={agentingId === selected.id}
+                className="flex items-center gap-1.5 bg-violet-700 hover:bg-violet-600 disabled:opacity-60 text-white px-3 py-1.5 rounded-lg text-sm transition-colors">
+                {agentingId === selected.id ? <><Spinner size={14} />Agent thinking…</> : "Run Agent"}
+              </button>
               {selected.status !== "IN_CRM" && selected.fitScore !== null && (
                 <button onClick={() => syncHubspot(selected.id)} disabled={hubspotingId === selected.id}
                   className="flex items-center gap-1.5 bg-orange-700 hover:bg-orange-600 disabled:opacity-60 text-white px-3 py-1.5 rounded-lg text-sm transition-colors">
@@ -317,7 +351,7 @@ export default function ProspectsPage() {
             {selected.outreachDrafts.length > 0 && (
               <div>
                 <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Outreach Drafts</h3>
-                <div className="flex gap-2 mb-3">
+                <div className="flex flex-wrap gap-2 mb-3">
                   {["EMAIL", "LINKEDIN", "CALL_SCRIPT", "MEETING_BRIEF"].map((tab) => {
                     const hasDraft = selected.outreachDrafts.some((d) => d.type === tab);
                     return (
@@ -327,8 +361,45 @@ export default function ProspectsPage() {
                       </button>
                     );
                   })}
+                  {agentDraft && (
+                    <button onClick={() => setActiveTab("AGENT")}
+                      className={`text-xs px-3 py-1.5 rounded-lg transition-colors ${activeTab === "AGENT" ? "bg-violet-600 text-white" : "bg-violet-900/50 text-violet-300 hover:text-white"}`}>
+                      Agent
+                    </button>
+                  )}
                 </div>
-                {activeDraft && (
+
+                {/* Agent tab content */}
+                {activeTab === "AGENT" && agentDraft && agentPayload && (
+                  <div className="space-y-3">
+                    <div className="bg-violet-900/20 border border-violet-800 rounded-lg p-3">
+                      <h4 className="text-xs font-semibold text-violet-400 uppercase tracking-wide mb-1">Agent Reasoning</h4>
+                      <p className="text-violet-200 text-sm">{agentPayload.reasoning}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-400">Outreach type chosen:</span>
+                      <span className="text-xs bg-violet-800 text-violet-200 px-2 py-0.5 rounded-full font-medium">
+                        {agentPayload.outreachType.replace(/_/g, " ")}
+                      </span>
+                    </div>
+                    <div className="bg-gray-900 border border-gray-700 rounded-lg p-4">
+                      {agentDraft.subject && (
+                        <div className="mb-3">
+                          <span className="text-xs text-gray-400 uppercase tracking-wide">Subject: </span>
+                          <span className="text-sm text-white font-medium">{agentDraft.subject}</span>
+                        </div>
+                      )}
+                      <pre className="text-sm text-gray-300 whitespace-pre-wrap font-sans">{agentPayload.messageBody}</pre>
+                      <button onClick={() => copy(agentDraft.subject ? `Subject: ${agentDraft.subject}\n\n${agentPayload.messageBody}` : agentPayload.messageBody)}
+                        className="mt-3 flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-colors">
+                        {copied ? <><Check size={12} />Copied!</> : <><Copy size={12} />Copy</>}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Standard draft tab content */}
+                {activeTab !== "AGENT" && activeDraft && (
                   <div className="bg-gray-900 border border-gray-700 rounded-lg p-4">
                     {activeDraft.subject && (
                       <div className="mb-3">
