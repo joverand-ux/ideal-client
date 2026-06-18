@@ -143,4 +143,5 @@ enum OutreachType {
   CALL_SCRIPT
   MEETING_BRIEF
   VALUE_INTRO
+  AGENT
 }
