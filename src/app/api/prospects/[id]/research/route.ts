@@ -19,27 +19,39 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
 
   try {
     const rawContent = await researchCompany(prospect.companyName, prospect.website);
-    const analysis = await analyzeCompany(rawContent, clientProfile);
+    const a = await analyzeCompany(rawContent, clientProfile);
 
     await prisma.businessSignal.deleteMany({ where: { prospectId: id } });
 
     const updated = await prisma.prospect.update({
       where: { id },
       data: {
-        companySummary: analysis.companySummary,
-        services: analysis.services,
-        marketsServed: analysis.marketsServed,
-        locations: analysis.locations,
-        leadershipInfo: analysis.leadershipInfo,
-        fitScore: analysis.fitScore,
-        fitReason: analysis.fitReason,
-        confidenceScore: analysis.confidenceScore,
-        opportunityRating: analysis.opportunityRating as OpportunityRating,
-        recommendedConversation: analysis.recommendedConversation,
+        companySummary: a.companySummary,
+        services: a.services,
+        marketsServed: a.marketsServed,
+        locations: a.locations,
+        leadershipInfo: a.leadershipInfo,
+        keyDecisionMakers: a.keyDecisionMakers,
+        revenueEstimate: a.revenueEstimate,
+        technologyNeed: a.technologyNeed,
+        fitScore: a.fitScore,
+        fitReason: a.fitReason,
+        confidenceScore: a.confidenceScore,
+        opportunityRating: a.opportunityRating as OpportunityRating,
+        recommendedConversation: a.recommendedConversation,
+        connectiqScore: a.connectiqScore,
+        growthSignalsScore: a.growthSignalsScore,
+        technologyScore: a.technologyScore,
+        revenuePotentialScore: a.revenuePotentialScore,
+        companySizeFitScore: a.companySizeFitScore,
+        triggerEventsScore: a.triggerEventsScore,
+        aiAutomationScore: a.aiAutomationScore,
+        priorityTier: a.priorityTier,
+        estimatedPipelineValue: a.estimatedPipelineValue,
         status: "SCORED",
         researchedAt: new Date(),
         businessSignals: {
-          create: analysis.businessSignals.map((s) => ({
+          create: a.businessSignals.map((s) => ({
             type: (s.type as SignalType) in SignalType ? (s.type as SignalType) : SignalType.OTHER,
             title: s.title,
             description: s.description,

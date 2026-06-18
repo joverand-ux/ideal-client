@@ -47,6 +47,7 @@ model Prospect {
   industry        String?
   location        String?
   employeeCount   Int?
+  revenueEstimate String?
   yearsInBusiness Int?
   status          ProspectStatus @default(NEW)
   companySummary  String?
@@ -54,12 +55,26 @@ model Prospect {
   marketsServed   String[]
   locations       String[]
   leadershipInfo  String?
+  keyDecisionMakers String?
+  linkedinUrl     String?
   businessSignals BusinessSignal[]
   fitScore        Int?
   fitReason       String?
   confidenceScore Int?
   opportunityRating OpportunityRating?
   recommendedConversation String?
+  // ConnectIQ scoring formula fields
+  connectiqScore        Int?
+  growthSignalsScore    Int?
+  technologyScore       Int?
+  revenuePotentialScore Int?
+  companySizeFitScore   Int?
+  triggerEventsScore    Int?
+  aiAutomationScore     Int?
+  technologyNeed        String?
+  priorityTier          String?
+  estimatedPipelineValue String?
+  sourceCompany         String?
   outreachDrafts  OutreachDraft[]
   hubspotCompanyId String?
   hubspotContactId String?
@@ -127,4 +142,5 @@ enum OutreachType {
   LINKEDIN
   CALL_SCRIPT
   MEETING_BRIEF
+  VALUE_INTRO
 }
