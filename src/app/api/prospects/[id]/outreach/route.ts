@@ -19,8 +19,17 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
       companySummary: prospect.companySummary,
       fitReason: prospect.fitReason,
       recommendedConversation: prospect.recommendedConversation,
+      technologyNeed: prospect.technologyNeed,
+      likelyProblems: [],
+      recommendedServices: [],
+      estimatedPipelineValue: prospect.estimatedPipelineValue,
       services: prospect.services,
-      businessSignals: prospect.businessSignals.map((s) => ({ type: s.type, title: s.title, description: s.description ?? "" })),
+      priorityTier: prospect.priorityTier,
+      businessSignals: prospect.businessSignals.map((s) => ({
+        type: s.type,
+        title: s.title,
+        description: s.description ?? "",
+      })),
     },
     clientProfile
   );
@@ -29,8 +38,9 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
 
   await prisma.outreachDraft.createMany({
     data: [
-      { prospectId: id, type: "EMAIL", subject: outreach.email.subject, body: outreach.email.body },
+      { prospectId: id, type: "EMAIL", subject: outreach.executiveEmail.subject, body: outreach.executiveEmail.body },
       { prospectId: id, type: "LINKEDIN", body: outreach.linkedin },
+      { prospectId: id, type: "VALUE_INTRO", body: outreach.valueIntro },
       { prospectId: id, type: "CALL_SCRIPT", body: outreach.callScript },
       { prospectId: id, type: "MEETING_BRIEF", body: outreach.meetingBrief },
     ],

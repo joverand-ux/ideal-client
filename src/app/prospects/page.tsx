@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { Plus, X, Search, ExternalLink, Copy, Check } from "lucide-react";
+import { Plus, X, Search, ExternalLink, Copy, Check, Zap, TrendingUp } from "lucide-react";
 import { Spinner } from "@/components/spinner";
 
 interface Signal { id: string; type: string; title: string; description: string | null; source: string | null; }
@@ -11,23 +11,38 @@ interface Prospect {
   fitScore: number | null; fitReason: string | null; confidenceScore: number | null;
   opportunityRating: string | null; recommendedConversation: string | null;
   companySummary: string | null; services: string[]; marketsServed: string[];
-  locations: string[]; leadershipInfo: string | null;
+  locations: string[]; leadershipInfo: string | null; keyDecisionMakers: string | null;
+  linkedinUrl: string | null; technologyNeed: string | null;
   businessSignals: Signal[]; outreachDrafts: Draft[];
-  icpId: string | null;
+  icpId: string | null; priorityTier: string | null;
+  connectiqScore: number | null; growthSignalsScore: number | null;
+  technologyScore: number | null; revenuePotentialScore: number | null;
+  companySizeFitScore: number | null; triggerEventsScore: number | null;
+  aiAutomationScore: number | null; estimatedPipelineValue: string | null;
+  sourceCompany: string | null; revenueEstimate: string | null;
 }
 interface ICP { id: string; name: string; }
 
-interface AgentDraftPayload {
-  reasoning: string;
-  outreachType: string;
-  messageBody: string;
-}
-
-function parseAgentDraft(body: string): AgentDraftPayload | null {
+// Parse agent draft body — supports both old JSON format and new plaintext format
+function parseAgentDraftBody(draft: Draft): { reasoning: string; outreachType: string; messageBody: string; subject: string } {
+  // Try old JSON format first
   try {
-    return JSON.parse(body) as AgentDraftPayload;
+    const parsed = JSON.parse(draft.body) as { reasoning: string; outreachType: string; messageBody: string };
+    return { reasoning: parsed.reasoning, outreachType: parsed.outreachType, messageBody: parsed.messageBody, subject: draft.subject ?? "" };
   } catch {
-    return null;
+    // New plaintext format: [REASONING]\n...\n\n[MESSAGE]\n...
+    const reasoningMatch = draft.body.match(/\[REASONING\]\n([\s\S]*?)\n\n\[MESSAGE\]/);
+    const messageMatch = draft.body.match(/\[MESSAGE\]\n([\s\S]*)/);
+    // Parse type from subject prefix [TYPE_NAME] Subject
+    const typeMatch = draft.subject?.match(/^\[([^\]]+)\]/);
+    const rawType = typeMatch ? typeMatch[1].toLowerCase() : "intro_email";
+    const cleanSubject = draft.subject?.replace(/^\[[^\]]+\]\s*/, "") ?? "";
+    return {
+      reasoning: reasoningMatch ? reasoningMatch[1] : "",
+      outreachType: rawType,
+      messageBody: messageMatch ? messageMatch[1] : draft.body,
+      subject: cleanSubject,
+    };
   }
 }
 
@@ -41,6 +56,12 @@ const STATUS_COLORS: Record<string, string> = {
   ARCHIVED: "bg-red-50 text-red-700",
 };
 
+const TIER_STYLES: Record<string, string> = {
+  HOT: "bg-red-50 text-red-600 border-red-200",
+  WARM: "bg-orange-50 text-orange-600 border-orange-200",
+  FUTURE: "bg-gray-50 text-gray-500 border-gray-200",
+};
+
 const OPP_COLORS: Record<string, string> = { HIGH: "text-green-600", MEDIUM: "text-yellow-600", LOW: "text-gray-500" };
 
 export default function ProspectsPage() {
@@ -49,6 +70,7 @@ export default function ProspectsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [tierFilter, setTierFilter] = useState("ALL");
   const [showAddModal, setShowAddModal] = useState(false);
   const [selected, setSelected] = useState<Prospect | null>(null);
   const [researchingId, setResearchingId] = useState<string | null>(null);
@@ -59,72 +81,108 @@ export default function ProspectsPage() {
   const [copied, setCopied] = useState(false);
   const [addForm, setAddForm] = useState({ companyName: "", website: "", industry: "", location: "", employeeCount: "", icpId: "" });
   const [adding, setAdding] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 4000);
+  };
 
   const load = useCallback(async () => {
-    const [pRes, iRes] = await Promise.all([fetch("/api/prospects"), fetch("/api/icps")]);
-    const pData = await pRes.json();
-    const iData = await iRes.json();
-    setProspects(Array.isArray(pData) ? pData : []);
-    setIcps(Array.isArray(iData) ? iData : []);
-    setLoading(false);
+    try {
+      const [pRes, iRes] = await Promise.all([fetch("/api/prospects"), fetch("/api/icps")]);
+      const pData = await pRes.json() as unknown;
+      const iData = await iRes.json() as unknown;
+      setProspects(Array.isArray(pData) ? pData : []);
+      setIcps(Array.isArray(iData) ? iData : []);
+    } catch {
+      showToast("Failed to load prospects");
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { void load(); }, [load]);
 
   const filtered = prospects.filter((p) => {
     const matchSearch = p.companyName.toLowerCase().includes(search.toLowerCase());
     const matchStatus = statusFilter === "ALL" || p.status === statusFilter;
-    return matchSearch && matchStatus;
+    const matchTier = tierFilter === "ALL" || p.priorityTier === tierFilter;
+    return matchSearch && matchStatus && matchTier;
   });
 
   const research = async (id: string) => {
     setResearchingId(id);
-    const r = await fetch(`/api/prospects/${id}/research`, { method: "POST" });
-    if (r.ok) {
-      const updated = await r.json() as Prospect;
-      setProspects((prev) => prev.map((p) => (p.id === id ? { ...p, ...updated } : p)));
-      if (selected?.id === id) setSelected((s) => s ? { ...s, ...updated } : s);
+    try {
+      const r = await fetch(`/api/prospects/${id}/research`, { method: "POST" });
+      if (r.ok) {
+        const updated = await r.json() as Prospect;
+        setProspects((prev) => prev.map((p) => (p.id === id ? { ...p, ...updated } : p)));
+        if (selected?.id === id) setSelected((s) => s ? { ...s, ...updated } : s);
+      } else {
+        showToast("Research failed. Please try again.");
+      }
+    } catch {
+      showToast("Research failed. Please try again.");
     }
     setResearchingId(null);
   };
 
   const generateOutreach = async (id: string) => {
     setOutreachingId(id);
-    const r = await fetch(`/api/prospects/${id}/outreach`, { method: "POST" });
-    if (r.ok) {
-      await load();
-      if (selected?.id === id) {
-        const fresh = await fetch(`/api/prospects/${id}`).then((res) => res.json()) as Prospect;
-        setSelected(fresh);
+    try {
+      const r = await fetch(`/api/prospects/${id}/outreach`, { method: "POST" });
+      if (r.ok) {
+        await load();
+        if (selected?.id === id) {
+          const fresh = await fetch(`/api/prospects/${id}`).then((res) => res.json()) as Prospect;
+          setSelected(fresh);
+        }
+        setActiveTab("EMAIL");
+      } else {
+        showToast("Outreach generation failed. Please try again.");
       }
+    } catch {
+      showToast("Outreach generation failed. Please try again.");
     }
     setOutreachingId(null);
-    setActiveTab("EMAIL");
   };
 
   const runAgent = async (id: string) => {
     setAgentingId(id);
-    const r = await fetch(`/api/prospects/${id}/agent-outreach`, { method: "POST" });
-    if (r.ok) {
-      await load();
-      if (selected?.id === id) {
-        const fresh = await fetch(`/api/prospects/${id}`).then((res) => res.json()) as Prospect;
-        setSelected(fresh);
-        setActiveTab("AGENT");
+    try {
+      const r = await fetch(`/api/prospects/${id}/agent-outreach`, { method: "POST" });
+      if (r.ok) {
+        await load();
+        if (selected?.id === id) {
+          const fresh = await fetch(`/api/prospects/${id}`).then((res) => res.json()) as Prospect;
+          setSelected(fresh);
+          setActiveTab("AGENT");
+        }
+      } else {
+        showToast("Agent outreach failed. Please try again.");
       }
+    } catch {
+      showToast("Agent outreach failed. Please try again.");
     }
     setAgentingId(null);
   };
 
   const syncHubspot = async (id: string) => {
     setHubspotingId(id);
-    const r = await fetch(`/api/prospects/${id}/hubspot`, { method: "POST" });
-    if (r.ok) {
-      await load();
-      if (selected?.id === id) {
-        const fresh = await fetch(`/api/prospects/${id}`).then((res) => res.json()) as Prospect;
-        setSelected(fresh);
+    try {
+      const r = await fetch(`/api/prospects/${id}/hubspot`, { method: "POST" });
+      if (r.ok) {
+        await load();
+        if (selected?.id === id) {
+          const fresh = await fetch(`/api/prospects/${id}`).then((res) => res.json()) as Prospect;
+          setSelected(fresh);
+        }
+      } else {
+        showToast("HubSpot sync failed. Check your API key in settings.");
       }
+    } catch {
+      showToast("HubSpot sync failed.");
     }
     setHubspotingId(null);
   };
@@ -139,15 +197,23 @@ export default function ProspectsPage() {
   const addProspect = async () => {
     if (!addForm.companyName) return;
     setAdding(true);
-    await fetch("/api/prospects", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...addForm, employeeCount: addForm.employeeCount ? Number(addForm.employeeCount) : undefined, icpId: addForm.icpId || undefined }),
-    });
-    await load();
+    try {
+      const r = await fetch("/api/prospects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...addForm, employeeCount: addForm.employeeCount ? Number(addForm.employeeCount) : undefined, icpId: addForm.icpId || undefined }),
+      });
+      if (r.ok) {
+        await load();
+        setShowAddModal(false);
+        setAddForm({ companyName: "", website: "", industry: "", location: "", employeeCount: "", icpId: "" });
+      } else {
+        showToast("Failed to add prospect.");
+      }
+    } catch {
+      showToast("Failed to add prospect.");
+    }
     setAdding(false);
-    setShowAddModal(false);
-    setAddForm({ companyName: "", website: "", industry: "", location: "", employeeCount: "", icpId: "" });
   };
 
   const copy = async (text: string) => {
@@ -156,14 +222,28 @@ export default function ProspectsPage() {
     setTimeout(() => setCopied(false), 1500);
   };
 
-  const activeDraft = selected?.outreachDrafts?.find((d) => d.type === activeTab);
   const agentDraft = selected?.outreachDrafts?.find((d) => d.type === "AGENT");
-  const agentPayload = agentDraft ? parseAgentDraft(agentDraft.body) : null;
+  const agentParsed = agentDraft ? parseAgentDraftBody(agentDraft) : null;
+  const activeDraft = selected?.outreachDrafts?.find((d) => d.type === activeTab);
+
+  const scoreColor = (score: number | null) => {
+    if (!score) return "bg-gray-200";
+    if (score >= 70) return "bg-red-500";
+    if (score >= 45) return "bg-orange-500";
+    return "bg-blue-400";
+  };
 
   if (loading) return <div className="flex items-center gap-2 text-gray-500"><Spinner /><span>Loading…</span></div>;
 
   return (
     <div className="flex gap-6 h-full">
+      {/* Toast */}
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-red-600 text-white px-5 py-3 rounded-xl shadow-lg text-sm font-medium">
+          {toast}
+        </div>
+      )}
+
       {/* Main panel */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between mb-6">
@@ -177,7 +257,7 @@ export default function ProspectsPage() {
         </div>
 
         {/* Filters */}
-        <div className="flex gap-3 mb-4">
+        <div className="flex flex-wrap gap-3 mb-4">
           <div className="relative flex-1 max-w-xs">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search prospects…"
@@ -187,6 +267,12 @@ export default function ProspectsPage() {
             className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-gray-700 text-sm outline-none focus:border-indigo-500">
             {["ALL", "NEW", "RESEARCHING", "RESEARCHED", "SCORED", "OUTREACH_READY", "IN_CRM", "ARCHIVED"].map((s) => (
               <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+          <select value={tierFilter} onChange={(e) => setTierFilter(e.target.value)}
+            className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-gray-700 text-sm outline-none focus:border-indigo-500">
+            {["ALL", "HOT", "WARM", "FUTURE"].map((t) => (
+              <option key={t} value={t}>{t}</option>
             ))}
           </select>
         </div>
@@ -204,7 +290,7 @@ export default function ProspectsPage() {
                   <th className="text-left px-4 py-3">Company</th>
                   <th className="text-left px-4 py-3 hidden md:table-cell">Industry</th>
                   <th className="text-left px-4 py-3">Status</th>
-                  <th className="text-left px-4 py-3 hidden lg:table-cell">Fit Score</th>
+                  <th className="text-left px-4 py-3 hidden lg:table-cell">Score</th>
                   <th className="text-right px-4 py-3">Actions</th>
                 </tr>
               </thead>
@@ -212,8 +298,17 @@ export default function ProspectsPage() {
                 {filtered.map((p) => (
                   <tr key={p.id} className="hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => { setSelected(p); setActiveTab("EMAIL"); }}>
                     <td className="px-4 py-3">
-                      <div className="font-medium text-gray-900">{p.companyName}</div>
-                      {p.website && <div className="text-xs text-gray-400 truncate max-w-[200px]">{p.website}</div>}
+                      <div className="flex items-center gap-2">
+                        {p.priorityTier && (
+                          <span className={`text-xs px-1.5 py-0.5 rounded border ${TIER_STYLES[p.priorityTier] ?? "bg-gray-50 text-gray-500 border-gray-200"}`}>
+                            {p.priorityTier}
+                          </span>
+                        )}
+                        <div>
+                          <div className="font-medium text-gray-900">{p.companyName}</div>
+                          {p.website && <div className="text-xs text-gray-400 truncate max-w-[160px]">{p.website}</div>}
+                        </div>
+                      </div>
                     </td>
                     <td className="px-4 py-3 hidden md:table-cell text-gray-500">{p.industry || "—"}</td>
                     <td className="px-4 py-3">
@@ -222,12 +317,13 @@ export default function ProspectsPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 hidden lg:table-cell">
-                      {p.fitScore !== null ? (
+                      {(p.connectiqScore ?? p.fitScore) !== null ? (
                         <div className="flex items-center gap-2">
                           <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                            <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${p.fitScore}%` }} />
+                            <div className={`h-full rounded-full ${scoreColor(p.connectiqScore ?? p.fitScore)}`}
+                              style={{ width: `${p.connectiqScore ?? p.fitScore ?? 0}%` }} />
                           </div>
-                          <span className="text-gray-700 text-xs">{p.fitScore}</span>
+                          <span className="text-gray-700 text-xs font-medium">{p.connectiqScore ?? p.fitScore}</span>
                         </div>
                       ) : "—"}
                     </td>
@@ -261,9 +357,16 @@ export default function ProspectsPage() {
         <div className="w-[600px] shrink-0 bg-white border border-gray-200 rounded-xl overflow-y-auto max-h-[calc(100vh-8rem)] shadow-sm">
           <div className="flex items-start justify-between p-5 border-b border-gray-100 sticky top-0 bg-white z-10">
             <div>
-              <h2 className="font-semibold text-gray-900 text-lg">{selected.companyName}</h2>
+              <div className="flex items-center gap-2 mb-0.5">
+                {selected.priorityTier && (
+                  <span className={`text-xs px-1.5 py-0.5 rounded border font-medium ${TIER_STYLES[selected.priorityTier] ?? "bg-gray-50 text-gray-500 border-gray-200"}`}>
+                    {selected.priorityTier}
+                  </span>
+                )}
+                <h2 className="font-semibold text-gray-900 text-lg">{selected.companyName}</h2>
+              </div>
               {selected.website && (
-                <a href={selected.website} target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-600 hover:underline flex items-center gap-1 mt-0.5">
+                <a href={selected.website} target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-600 hover:underline flex items-center gap-1">
                   {selected.website} <ExternalLink size={10} />
                 </a>
               )}
@@ -272,18 +375,59 @@ export default function ProspectsPage() {
           </div>
 
           <div className="p-5 space-y-5">
-            {/* Meta */}
-            <div className="flex flex-wrap gap-2">
+            {/* Scores */}
+            <div className="flex flex-wrap gap-3">
               <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_COLORS[selected.status]}`}>{selected.status.replace("_", " ")}</span>
               {selected.opportunityRating && <span className={`text-xs font-medium ${OPP_COLORS[selected.opportunityRating]}`}>{selected.opportunityRating} opportunity</span>}
-              {selected.fitScore !== null && <span className="text-xs text-gray-500">Fit Score: <span className="text-gray-900 font-medium">{selected.fitScore}/100</span></span>}
+              {selected.connectiqScore !== null && (
+                <span className="text-xs text-gray-500 flex items-center gap-1">
+                  <Zap size={11} className="text-purple-500" />ConnectIQ: <span className="font-medium text-gray-900">{selected.connectiqScore}/100</span>
+                </span>
+              )}
+              {selected.fitScore !== null && selected.connectiqScore === null && (
+                <span className="text-xs text-gray-500">Fit: <span className="font-medium text-gray-900">{selected.fitScore}/100</span></span>
+              )}
+              {selected.estimatedPipelineValue && (
+                <span className="text-xs text-green-600 flex items-center gap-1">
+                  <TrendingUp size={11} />{selected.estimatedPipelineValue}
+                </span>
+              )}
             </div>
+
+            {/* ConnectIQ score breakdown */}
+            {selected.connectiqScore !== null && (
+              <div className="bg-gray-50 border border-gray-100 rounded-lg p-3">
+                <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">ConnectIQ Score Breakdown</h3>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  {[
+                    { label: "Growth Signals", value: selected.growthSignalsScore, max: 25 },
+                    { label: "Technology", value: selected.technologyScore, max: 25 },
+                    { label: "Revenue Potential", value: selected.revenuePotentialScore, max: 20 },
+                    { label: "Company Size Fit", value: selected.companySizeFitScore, max: 15 },
+                    { label: "Trigger Events", value: selected.triggerEventsScore, max: 15 },
+                  ].map(({ label, value, max }) => (
+                    <div key={label} className="flex items-center justify-between">
+                      <span className="text-gray-500">{label}</span>
+                      <span className="font-medium text-gray-900">{value ?? "—"}/{max}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Summary */}
             {selected.companySummary && (
               <div>
                 <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Company Summary</h3>
                 <p className="text-gray-700 text-sm">{selected.companySummary}</p>
+              </div>
+            )}
+
+            {/* Technology Need */}
+            {selected.technologyNeed && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                <h3 className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-1">Technology Need</h3>
+                <p className="text-amber-900 text-sm">{selected.technologyNeed}</p>
               </div>
             )}
 
@@ -339,7 +483,7 @@ export default function ProspectsPage() {
                 className="flex items-center gap-1.5 bg-violet-600 hover:bg-violet-700 disabled:opacity-60 text-white px-3 py-1.5 rounded-lg text-sm transition-colors">
                 {agentingId === selected.id ? <><Spinner size={14} />Agent thinking…</> : "Run Agent"}
               </button>
-              {selected.status !== "IN_CRM" && selected.fitScore !== null && (
+              {selected.status !== "IN_CRM" && (selected.fitScore !== null || selected.connectiqScore !== null) && (
                 <button onClick={() => syncHubspot(selected.id)} disabled={hubspotingId === selected.id}
                   className="flex items-center gap-1.5 bg-orange-600 hover:bg-orange-700 disabled:opacity-60 text-white px-3 py-1.5 rounded-lg text-sm transition-colors">
                   {hubspotingId === selected.id ? <><Spinner size={14} />Syncing…</> : "Sync to HubSpot"}
@@ -352,12 +496,12 @@ export default function ProspectsPage() {
               <div>
                 <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Outreach Drafts</h3>
                 <div className="flex flex-wrap gap-2 mb-3">
-                  {["EMAIL", "LINKEDIN", "CALL_SCRIPT", "MEETING_BRIEF"].map((tab) => {
+                  {(["EMAIL", "LINKEDIN", "CALL_SCRIPT", "VALUE_INTRO", "MEETING_BRIEF"] as const).map((tab) => {
                     const hasDraft = selected.outreachDrafts.some((d) => d.type === tab);
                     return (
                       <button key={tab} onClick={() => setActiveTab(tab)} disabled={!hasDraft}
                         className={`text-xs px-3 py-1.5 rounded-lg transition-colors disabled:opacity-40 ${activeTab === tab ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-500 hover:text-gray-900 hover:bg-gray-200"}`}>
-                        {tab.replace("_", " ")}
+                        {tab.replace(/_/g, " ")}
                       </button>
                     );
                   })}
@@ -369,28 +513,32 @@ export default function ProspectsPage() {
                   )}
                 </div>
 
-                {/* Agent tab content */}
-                {activeTab === "AGENT" && agentDraft && agentPayload && (
+                {/* Agent tab */}
+                {activeTab === "AGENT" && agentDraft && agentParsed && (
                   <div className="space-y-3">
-                    <div className="bg-violet-50 border border-violet-200 rounded-lg p-3">
-                      <h4 className="text-xs font-semibold text-violet-600 uppercase tracking-wide mb-1">Agent Reasoning</h4>
-                      <p className="text-violet-800 text-sm">{agentPayload.reasoning}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-500">Outreach type chosen:</span>
-                      <span className="text-xs bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full font-medium">
-                        {agentPayload.outreachType.replace(/_/g, " ")}
-                      </span>
-                    </div>
+                    {agentParsed.outreachType && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-500">Outreach type:</span>
+                        <span className="text-xs bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full font-medium">
+                          {agentParsed.outreachType.replace(/_/g, " ")}
+                        </span>
+                      </div>
+                    )}
+                    {agentParsed.reasoning && (
+                      <div className="bg-violet-50 border border-violet-200 rounded-lg p-3">
+                        <h4 className="text-xs font-semibold text-violet-600 uppercase tracking-wide mb-1">Agent Reasoning</h4>
+                        <p className="text-violet-800 text-sm">{agentParsed.reasoning}</p>
+                      </div>
+                    )}
                     <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                      {agentDraft.subject && (
+                      {agentParsed.subject && (
                         <div className="mb-3">
                           <span className="text-xs text-gray-400 uppercase tracking-wide">Subject: </span>
-                          <span className="text-sm text-gray-900 font-medium">{agentDraft.subject}</span>
+                          <span className="text-sm text-gray-900 font-medium">{agentParsed.subject}</span>
                         </div>
                       )}
-                      <pre className="text-sm text-gray-700 whitespace-pre-wrap font-sans">{agentPayload.messageBody}</pre>
-                      <button onClick={() => copy(agentDraft.subject ? `Subject: ${agentDraft.subject}\n\n${agentPayload.messageBody}` : agentPayload.messageBody)}
+                      <pre className="text-sm text-gray-700 whitespace-pre-wrap font-sans">{agentParsed.messageBody}</pre>
+                      <button onClick={() => copy(agentParsed.subject ? `Subject: ${agentParsed.subject}\n\n${agentParsed.messageBody}` : agentParsed.messageBody)}
                         className="mt-3 flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-700 transition-colors">
                         {copied ? <><Check size={12} />Copied!</> : <><Copy size={12} />Copy</>}
                       </button>
@@ -398,7 +546,7 @@ export default function ProspectsPage() {
                   </div>
                 )}
 
-                {/* Standard draft tab content */}
+                {/* Standard draft */}
                 {activeTab !== "AGENT" && activeDraft && (
                   <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                     {activeDraft.subject && (
