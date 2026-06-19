@@ -82,9 +82,13 @@ export default function ProspectsPage() {
   const [addForm, setAddForm] = useState({ companyName: "", website: "", industry: "", location: "", employeeCount: "", icpId: "" });
   const [adding, setAdding] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [toastType, setToastType] = useState<"error" | "success">("error");
+  const [sendingDraftId, setSendingDraftId] = useState<string | null>(null);
+  const [sentDraftIds, setSentDraftIds] = useState<Set<string>>(new Set());
 
-  const showToast = (msg: string) => {
+  const showToast = (msg: string, type: "error" | "success" = "error") => {
     setToast(msg);
+    setToastType(type);
     setTimeout(() => setToast(null), 4000);
   };
 
@@ -216,6 +220,27 @@ export default function ProspectsPage() {
     setAdding(false);
   };
 
+  const sendEmail = async (prospectId: string, draftId: string) => {
+    setSendingDraftId(draftId);
+    try {
+      const r = await fetch(`/api/prospects/${prospectId}/send-email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ draftId }),
+      });
+      const data = await r.json() as { success?: boolean; error?: string };
+      if (r.ok && data.success) {
+        setSentDraftIds((prev) => new Set([...prev, draftId]));
+        showToast("Email sent!", "success");
+      } else {
+        showToast(data.error ?? "Failed to send email");
+      }
+    } catch {
+      showToast("Failed to send email");
+    }
+    setSendingDraftId(null);
+  };
+
   const copy = async (text: string) => {
     await navigator.clipboard.writeText(text);
     setCopied(true);
@@ -239,7 +264,7 @@ export default function ProspectsPage() {
     <div className="flex gap-6 h-full">
       {/* Toast */}
       {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-red-600 text-white px-5 py-3 rounded-xl shadow-lg text-sm font-medium">
+        <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 text-white px-5 py-3 rounded-xl shadow-lg text-sm font-medium ${toastType === "success" ? "bg-green-600" : "bg-red-600"}`}>
           {toast}
         </div>
       )}
@@ -538,10 +563,24 @@ export default function ProspectsPage() {
                         </div>
                       )}
                       <pre className="text-sm text-gray-700 whitespace-pre-wrap font-sans">{agentParsed.messageBody}</pre>
-                      <button onClick={() => copy(agentParsed.subject ? `Subject: ${agentParsed.subject}\n\n${agentParsed.messageBody}` : agentParsed.messageBody)}
-                        className="mt-3 flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-700 transition-colors">
-                        {copied ? <><Check size={12} />Copied!</> : <><Copy size={12} />Copy</>}
-                      </button>
+                      <div className="mt-3 flex items-center gap-3">
+                        <button onClick={() => copy(agentParsed.subject ? `Subject: ${agentParsed.subject}\n\n${agentParsed.messageBody}` : agentParsed.messageBody)}
+                          className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-700 transition-colors">
+                          {copied ? <><Check size={12} />Copied!</> : <><Copy size={12} />Copy</>}
+                        </button>
+                        {sentDraftIds.has(agentDraft.id) ? (
+                          <span className="flex items-center gap-1 text-xs text-green-600 font-medium">
+                            <Check size={12} />Sent
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => sendEmail(selected.id, agentDraft.id)}
+                            disabled={sendingDraftId === agentDraft.id}
+                            className="flex items-center gap-1.5 text-xs bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white px-2.5 py-1 rounded transition-colors">
+                            {sendingDraftId === agentDraft.id ? <><Spinner size={12} />Sending…</> : "Send Email"}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -556,10 +595,26 @@ export default function ProspectsPage() {
                       </div>
                     )}
                     <pre className="text-sm text-gray-700 whitespace-pre-wrap font-sans">{activeDraft.body}</pre>
-                    <button onClick={() => copy(activeDraft.subject ? `Subject: ${activeDraft.subject}\n\n${activeDraft.body}` : activeDraft.body)}
-                      className="mt-3 flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-700 transition-colors">
-                      {copied ? <><Check size={12} />Copied!</> : <><Copy size={12} />Copy</>}
-                    </button>
+                    <div className="mt-3 flex items-center gap-3">
+                      <button onClick={() => copy(activeDraft.subject ? `Subject: ${activeDraft.subject}\n\n${activeDraft.body}` : activeDraft.body)}
+                        className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-700 transition-colors">
+                        {copied ? <><Check size={12} />Copied!</> : <><Copy size={12} />Copy</>}
+                      </button>
+                      {activeDraft.type === "EMAIL" && (
+                        sentDraftIds.has(activeDraft.id) ? (
+                          <span className="flex items-center gap-1 text-xs text-green-600 font-medium">
+                            <Check size={12} />Sent
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => sendEmail(selected.id, activeDraft.id)}
+                            disabled={sendingDraftId === activeDraft.id}
+                            className="flex items-center gap-1.5 text-xs bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white px-2.5 py-1 rounded transition-colors">
+                            {sendingDraftId === activeDraft.id ? <><Spinner size={12} />Sending…</> : "Send Email"}
+                          </button>
+                        )
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
