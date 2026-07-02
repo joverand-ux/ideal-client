@@ -1,10 +1,11 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Building2, Target, Users, Settings } from "lucide-react";
+import { LayoutDashboard, Building2, Target, Users, Settings, ScanSearch } from "lucide-react";
 
 const navItems = [
   { label: "Dashboard", href: "/", icon: LayoutDashboard },
+  { label: "AIScanner", href: "/aiscanner", icon: ScanSearch },
   { label: "Client Profile", href: "/profile", icon: Building2 },
   { label: "Ideal Client Profiles", href: "/icps", icon: Target },
   { label: "Prospects", href: "/prospects", icon: Users },
